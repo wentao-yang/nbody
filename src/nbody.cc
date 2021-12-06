@@ -88,6 +88,8 @@ vector<Body> make_bodies(const string& test_file_name, const bool& random_test,
 }
 
 bool nbody_sequential(vector<Body>& bodies, const bool& output) {
+    // Update velocity
+    // Update location
     return true;
 }
 
