@@ -60,7 +60,7 @@ vector<Body> make_bodies(const string& test_file_name, const bool& random_test,
     vector<Body> bodies;
 
     if (random_test) {
-
+        cerr << "Random bodies generation not yet implemented.\n";
     } else {
         if (test_file_name.empty()) {
             cerr << "Test file name cannot be empty.\n";
@@ -87,6 +87,10 @@ vector<Body> make_bodies(const string& test_file_name, const bool& random_test,
     return bodies;
 }
 
+bool nbody_sequential(vector<Body>& bodies, const bool& output) {
+    return true;
+}
+
 int main (int argc, char* argv[]) {
     // Flags
     string test_file_name = ""; // string specifying the file of the test -f
@@ -94,7 +98,7 @@ int main (int argc, char* argv[]) {
     int num_random_bodies = 0; // number of random bodies to generate if `random_test` -n
     bool sequential = false; // use sequential implementation if true -s
     bool cuda = false; // use CUDA implementation if true and `sequential` is false -c
-    int num_threads = 0; // number of threads to create if using non-cuda parallel implementation -t
+    int num_threads = 0; // number of threads to create if using CPU parallel implementation -t
     bool output = false; // output nbody results if true -o
 
     if (!get_flags(argc, argv, test_file_name, random_test, num_random_bodies, sequential, 
@@ -110,10 +114,17 @@ int main (int argc, char* argv[]) {
     }
 
     if (sequential) {
-
+        if (!nbody_sequential(bodies, output)) {
+            cerr << "Sequential implementation failed.\n";
+            return -1;
+        }
     } else if (cuda) {
-
+        cerr << "CUDA implementation not yet implemented.\n";
+        return -1;
     } else {
-
+        cerr << "CPU parallel implementation not yet implemented.\n";
+        return -1;
     }
+
+    return 0;
 }

@@ -1,6 +1,6 @@
 test:
 	make run
-	./nbody -f tests/2_bodies.txt -o
+	./nbody -f tests/2_bodies.txt -s -o
 
 run:
 	nvcc -o nbody.o -c src/nbody.cc

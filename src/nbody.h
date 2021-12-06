@@ -33,8 +33,8 @@ struct Body {
  * @param num_random_bodies number of random bodies to generate if `random_test`
  * @param sequential use sequential implementation if true
  * @param cuda use CUDA implementation if true and `sequential` is false
- * @param num_threads number of threads to create if using non-CUDA parallel implementation
- * @param output output nbody results if true
+ * @param num_threads number of threads to create if using CPU parallel implementation
+ * @param output write nbody results to std::cout if true
  * 
  * @return true if success; false otherwise
  */
@@ -53,5 +53,15 @@ bool get_flags(const int& argc, char* const argv[], std::string& test_file_name,
  */
 std::vector<Body> make_bodies(const std::string& test_file_name, const bool& random_test, 
     const int& num_random_bodies);
+
+/**
+ * Sequential implementation.
+ * 
+ * @param bodies vector of the bodies
+ * @param output write nbody results to std::cout if true
+ * 
+ * @return true if success; false otherwise
+ */
+bool nbody_sequential(std::vector<Body>& bodies, const bool& output);
 
 #endif
