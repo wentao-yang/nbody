@@ -31,12 +31,16 @@ struct Body {
  * @param test_file_name string specifying the file of the test 
  * @param random_test generate random bodies for test instead of using test file if true
  * @param num_random_bodies number of random bodies to generate if `random_test`
+ * @param sequential use sequential implementation if true
+ * @param cuda use CUDA implementation if true and `sequential` is false
+ * @param num_threads number of threads to create if using non-CUDA parallel implementation
  * @param output output nbody results if true
  * 
  * @return true if success; false otherwise
  */
-bool get_flags(const int& argc, const char* const argv[], std::string& test_file_name, 
-    bool& random_test, int& num_random_bodies, bool& output);
+bool get_flags(const int& argc, char* const argv[], std::string& test_file_name, 
+    bool& random_test, int& num_random_bodies, bool& sequential, bool& cuda, int& num_threads,
+    bool& output);
 
 /**
  * Generate the necessary bodies for n-bodies.

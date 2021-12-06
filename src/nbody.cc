@@ -7,12 +7,13 @@
 
 using namespace std;
 
-bool get_flags(const int& argc, const char* const argv[], std::string& test_file_name, 
-    bool& random_test, int& num_random_bodies, bool& output) {
+bool get_flags(const int& argc, char* const argv[], string& test_file_name, 
+    bool& random_test, int& num_random_bodies, bool& sequential, bool& cuda, 
+    int& num_threads, bool& output) {
     int command;
 
     // Get flags
-    while ((command = getopt(argc, argv, "f:n:ro")) != -1) {
+    while ((command = getopt(argc, argv, "f:n:t:rsco")) != -1) {
         switch (command) {
             case 'f':
                 test_file_name = optarg;
@@ -20,8 +21,17 @@ bool get_flags(const int& argc, const char* const argv[], std::string& test_file
             case 'n':
                 num_random_bodies = atoi(optarg);
                 break;
+            case 't':
+                num_threads = atoi(optarg);
+                break;
             case 'r':
                 random_test = true;
+                break;
+            case 's':
+                sequential = true;
+                break;
+            case 'c':
+                cuda = true;
                 break;
             case 'o':
                 output = true;
@@ -31,7 +41,9 @@ bool get_flags(const int& argc, const char* const argv[], std::string& test_file
                     cerr << "Option -f requires a string.\n";
                 } else if (optopt = 'n') {
                     cerr << "Option -n requires an integer.\n";
-                } else if (isprint(optopt)) {
+                } else if (optopt = 't') {
+                    cerr << "Option -t requires an integer.\n";
+                }else if (isprint(optopt)) {
                     cerr << "Unknown option: " << optopt << ".\n";
                 } else {
                     cerr << "Unknown character: " << optopt << ".\n";
@@ -43,23 +55,23 @@ bool get_flags(const int& argc, const char* const argv[], std::string& test_file
     return true;
 }
 
-std::vector<Body> make_bodies(const std::string& test_file_name, const bool& random_test, 
+vector<Body> make_bodies(const string& test_file_name, const bool& random_test, 
     const int& num_random_bodies) {
-    std::vector<Body> bodies;
+    vector<Body> bodies;
 
     if (random_test) {
 
     } else {
         if (test_file_name.empty()) {
             cerr << "Test file name cannot be empty.\n";
-            return -1;
+            return bodies;
         }
 
         // Open test file
         ifstream test(test_file_name);
         if (!test.is_open()) {
             cerr << "Could not open the test file: " << test_file_name << ".\n";
-            return -1;
+            return bodies;
         }
 
         int num_bodies;
@@ -76,17 +88,32 @@ std::vector<Body> make_bodies(const std::string& test_file_name, const bool& ran
 }
 
 int main (int argc, char* argv[]) {
-    string test_file_name = "";
-    bool random_test = false;
-    int num_random_bodies = 0;
-    bool output = false;
+    // Flags
+    string test_file_name = ""; // string specifying the file of the test -f
+    bool random_test = false; // generate random bodies for test instead of using test file if true -r
+    int num_random_bodies = 0; // number of random bodies to generate if `random_test` -n
+    bool sequential = false; // use sequential implementation if true -s
+    bool cuda = false; // use CUDA implementation if true and `sequential` is false -c
+    int num_threads = 0; // number of threads to create if using non-cuda parallel implementation -t
+    bool output = false; // output nbody results if true -o
 
-    if (!get_flags(argc, argv, test_file_name, random_test, num_random_bodies, output)) {
+    if (!get_flags(argc, argv, test_file_name, random_test, num_random_bodies, sequential, 
+        cuda, num_threads, output)) {
+        cerr << "Getting flags failed.\n";
         return -1;
     }
-    cout << output;
 
     vector<Body> bodies = make_bodies(test_file_name, random_test, num_random_bodies);
+    if (bodies.size() == 0) {
+        cerr << "Creating bodies failed.\n";
+        return -1;
+    }
 
-    
+    if (sequential) {
+
+    } else if (cuda) {
+
+    } else {
+
+    }
 }
