@@ -11,14 +11,14 @@ const double G = 6.67408E-11;
  * Struct for keeping track of a vector.
  */
 struct Vector3D {
-    double _x;
-    double _y;
-    double _z;
+    double x_;
+    double y_;
+    double z_;
 
     Vector3D operator += (Vector3D const &other) {
-        this->_x += other._x;
-        this->_y += other._y;
-        this->_z += other._z;
+        this->x_ += other.x_;
+        this->y_ += other.y_;
+        this->z_ += other.z_;
         return *this;
     }
 };
@@ -27,12 +27,24 @@ struct Vector3D {
  * Struct for keeping track of a body.
  */
 struct Body {
-    Vector3D _pos; // Position
-    Vector3D _vel; // Velocity
-    Vector3D _acc; // Acceleration
-    double _mass;
-    double _radius;
-    bool _collided; // Have this body collided with another
+    Vector3D pos_; // Position
+    Vector3D vel_; // Velocity
+    Vector3D acc_; // Acceleration
+    double mass_;
+    double radius_;
+    bool collided_; // Have this body collided with another
+};
+
+/**
+ * Struct for the options of a pthread.
+ */
+struct ParallelThreadOption {
+    const int thread_number_;
+    const int& num_threads_;
+    pthread_barrier_t& barrier_;
+    std::vector<Body>& bodies_;
+    const int& seconds;
+    const bool& output;
 };
 
 /**
@@ -124,9 +136,15 @@ void output_result(const std::vector<Body>& bodies, const int& second);
  */
 void nbody_sequential(std::vector<Body>& bodies, const int& seconds, const bool& output);
 
+/**
+ * Function for a single thread in the CPU parallel implementation.
+ * 
+ * @param options pointer to the ParallelThreadOption of this thread
+ */ 
+void* nbody_parallel_thread(void* options);
 
 /**
- * Sequential implementation.
+ * CPU parallel implementation.
  * 
  * @param bodies vector of the bodies
  * @param seconds number of seconds to run the simulation

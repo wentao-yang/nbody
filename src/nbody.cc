@@ -12,12 +12,12 @@
 using namespace std;
 
 double bodies_distance(const Body& a, const Body& b) {
-    return sqrt(pow(a._pos._x - b._pos._x, 2) + pow(a._pos._y - b._pos._y, 2) 
-        + pow(a._pos._z - b._pos._z, 2));
+    return sqrt(pow(a.pos_.x_ - b.pos_.x_, 2) + pow(a.pos_.y_ - b.pos_.y_, 2) 
+        + pow(a.pos_.z_ - b.pos_.z_, 2));
 }
 
 bool collided(const Body& a, const Body& b) {
-    return bodies_distance(a, b) < (a._radius + b._radius);
+    return bodies_distance(a, b) < (a.radius_ + b.radius_);
 }
 
 bool get_flags(const int& argc, char* const argv[], string& test_file_name, 
@@ -79,10 +79,9 @@ vector<Body> make_bodies(const string& test_file_name, const bool& random_test,
 
     if (random_test) {
         for (int i = 0; i < num_random_bodies; i++) {
-            double x, y, z, mass, radius;
-            bodies.push_back({{(double) (rand() % 100000) - 50000, (double) (rand() % 100000) - 50000, 
-            (double) (rand() % 100000) - 50000}, {0, 0, 0}, {0, 0, 0}, (double) (rand() % 1000) * 1E9, 
-            (double) (rand() % 100), false});
+            bodies.push_back({{(double) (rand() % 100000) - 50000, (double) 
+            (rand() % 100000) - 50000, (double) (rand() % 100000) - 50000}, {0, 0, 0}, 
+            {0, 0, 0}, (double) (rand() % 1000) * 1E9, (double) (rand() % 100), false});
         }
     } else {
         if (test_file_name.empty()) {
@@ -105,25 +104,27 @@ vector<Body> make_bodies(const string& test_file_name, const bool& random_test,
             test >> x >> y >> z >> mass >> radius;
             bodies.push_back({{x, y, z}, {0, 0, 0}, {0, 0, 0}, mass, radius, false});
         }
+
+        test.close();
     }
 
     return bodies;
 }
 
 void update_acceleration(vector<Body>& bodies, int body_num) {
-    bodies[body_num]._acc._x = 0;
-    bodies[body_num]._acc._y = 0;
-    bodies[body_num]._acc._z = 0;
-    bodies[body_num]._collided = false;
+    bodies[body_num].acc_.x_ = 0;
+    bodies[body_num].acc_.y_ = 0;
+    bodies[body_num].acc_.z_ = 0;
+    bodies[body_num].collided_ = false;
 
     for (int i = 0; i < bodies.size(); i++) {
         if (i != body_num) {
-            double d = bodies_distance(bodies[body_num], bodies[i]);
-            double g = (bodies[i]._mass * G) / (pow(d, 3));
+            const double d = bodies_distance(bodies[body_num], bodies[i]);
+            const double g = (bodies[i].mass_ * G) / (pow(d, 3));
 
-            bodies[body_num]._acc._x += g * (bodies[i]._pos._x - bodies[body_num]._pos._x);
-            bodies[body_num]._acc._y += g * (bodies[i]._pos._y - bodies[body_num]._pos._y);
-            bodies[body_num]._acc._z += g * (bodies[i]._pos._z - bodies[body_num]._pos._z);
+            bodies[body_num].acc_.x_ += g * (bodies[i].pos_.x_ - bodies[body_num].pos_.x_);
+            bodies[body_num].acc_.y_ += g * (bodies[i].pos_.y_ - bodies[body_num].pos_.y_);
+            bodies[body_num].acc_.z_ += g * (bodies[i].pos_.z_ - bodies[body_num].pos_.z_);
         }
     }
 }
@@ -132,46 +133,47 @@ void handle_collisions(vector<Body>& bodies) {
     for (int i = 0; i < bodies.size(); i++) {
         for (int j = 0; j < i; j++) {
             if (collided(bodies[i], bodies[j])) {
-                bodies[i]._collided = true;
-                bodies[j]._collided = true;
+                bodies[i].collided_ = true;
+                bodies[j].collided_ = true;
 
-                double k1 = (2 * bodies[i]._mass) / (bodies[i]._mass + bodies[j]._mass);
-                double k2 = (bodies[i]._mass - bodies[j]._mass) / (bodies[i]._mass + bodies[j]._mass);
-                double k3 = (2 * bodies[j]._mass) / (bodies[i]._mass + bodies[j]._mass);
+                const double k1 = (2 * bodies[i].mass_) / (bodies[i].mass_ + bodies[j].mass_);
+                const double k2 = (bodies[i].mass_ - bodies[j].mass_) / (bodies[i].mass_ 
+                    + bodies[j].mass_);
+                const double k3 = (2 * bodies[j].mass_) / (bodies[i].mass_ + bodies[j].mass_);
 
-                double tmp_vel = bodies[i]._vel._x;
-                bodies[i]._vel._x = (k2 * tmp_vel) + (k3 * bodies[j]._vel._x);
-                bodies[j]._vel._x = (k1 * tmp_vel) - (k2 * bodies[j]._vel._x);
+                double tmpvel_ = bodies[i].vel_.x_;
+                bodies[i].vel_.x_ = (k2 * tmpvel_) + (k3 * bodies[j].vel_.x_);
+                bodies[j].vel_.x_ = (k1 * tmpvel_) - (k2 * bodies[j].vel_.x_);
 
-                tmp_vel = bodies[i]._vel._y;
-                bodies[i]._vel._y = (k2 * tmp_vel) + (k3 * bodies[j]._vel._y);
-                bodies[j]._vel._y = (k1 * tmp_vel) - (k2 * bodies[j]._vel._y);
+                tmpvel_ = bodies[i].vel_.y_;
+                bodies[i].vel_.y_ = (k2 * tmpvel_) + (k3 * bodies[j].vel_.y_);
+                bodies[j].vel_.y_ = (k1 * tmpvel_) - (k2 * bodies[j].vel_.y_);
 
-                tmp_vel = bodies[i]._vel._z;
-                bodies[i]._vel._z = (k2 * tmp_vel) + (k3 * bodies[j]._vel._z);
-                bodies[j]._vel._z = (k1 * tmp_vel) - (k2 * bodies[j]._vel._z);
+                tmpvel_ = bodies[i].vel_.z_;
+                bodies[i].vel_.z_ = (k2 * tmpvel_) + (k3 * bodies[j].vel_.z_);
+                bodies[j].vel_.z_ = (k1 * tmpvel_) - (k2 * bodies[j].vel_.z_);
             }
         }
     }
 }
 
 void update_velocity_and_location(Body& body) {
-    if (!body._collided) {
-        body._vel += body._acc;
+    if (!body.collided_) {
+        body.vel_ += body.acc_;
     }
-    body._pos += body._vel;
+    body.pos_ += body.vel_;
 }
 
 void output_result(const std::vector<Body>& bodies, const int& second) {
     cout << "Second: " << second << "\n";
     for (int i = 0; i < bodies.size(); i++) {
         cout << "Body: " << i << "\n";
-        cout << "Position: (" << bodies[i]._pos._x << ", " << bodies[i]._pos._y << ", " 
-            << bodies[i]._pos._z << ")\n";
-        cout << "Velocity: (" << bodies[i]._vel._x << ", " << bodies[i]._vel._y << ", " 
-            << bodies[i]._vel._z << ")\n";
-        cout << "Acceleration: (" << bodies[i]._acc._x << ", " << bodies[i]._acc._y << ", " 
-            << bodies[i]._acc._z << ")\n";
+        cout << "Position: (" << bodies[i].pos_.x_ << ", " << bodies[i].pos_.y_ << ", " 
+            << bodies[i].pos_.z_ << ")\n";
+        cout << "Velocity: (" << bodies[i].vel_.x_ << ", " << bodies[i].vel_.y_ << ", " 
+            << bodies[i].vel_.z_ << ")\n";
+        cout << "Acceleration: (" << bodies[i].acc_.x_ << ", " << bodies[i].acc_.y_ << ", " 
+            << bodies[i].acc_.z_ << ")\n";
     }
     cout << "\n";
 }
@@ -198,26 +200,71 @@ void nbody_sequential(vector<Body>& bodies, const int& seconds, const bool& outp
     }
 }
 
-void nbody_parallel(std::vector<Body>& bodies, const int& seconds, const int& num_threads, 
-    const bool& output) {
+void* nbody_parallel_thread(void* options) {
+    const int& thread_number = ((ParallelThreadOption*) options)->thread_number_;
+    const int& num_threads = ((ParallelThreadOption*) options)->num_threads_;
+    pthread_barrier_t& barrier_ = ((ParallelThreadOption*) options)->barrier_;
+    vector<Body>& bodies = ((ParallelThreadOption*) options)->bodies_;
+    const int& seconds = ((ParallelThreadOption*) options)->seconds;
+    const bool& output = ((ParallelThreadOption*) options)->output;
+
+    const int bodies_size_round_up = (bodies.size() + num_threads - 1) & (-num_threads);
+
     for (int s = 0; s < seconds; s++) {
-        if (output) {
+        if (output && thread_number == 0) {
             output_result(bodies, s);
         }
+        pthread_barrier_wait(&barrier_);
 
-        for (int i = 0; i < bodies.size(); i++) {
-            update_acceleration(bodies, i);
+        for (int i = thread_number; i < bodies_size_round_up; i+=num_threads) {
+            if (i < bodies.size()) {
+                update_acceleration(bodies, i);
+            }
+            pthread_barrier_wait(&barrier_);
         }
 
-        handle_collisions(bodies);
+        if (thread_number == 0) {
+            handle_collisions(bodies);
+        }
+        pthread_barrier_wait(&barrier_);
 
-        for (Body& b : bodies) {
-            update_velocity_and_location(b);
+        for (int i = thread_number; i < bodies_size_round_up; i+=num_threads) {
+            if (i < bodies.size()) {
+                update_velocity_and_location(bodies[i]);
+            }
+            pthread_barrier_wait(&barrier_);
         }
     }
 
-    if (output) {
+    if (output && thread_number == 0) {
         output_result(bodies, seconds);
+    }
+}
+
+void nbody_parallel(vector<Body>& bodies, const int& seconds, const int& num_threads, 
+    const bool& output) {
+    pthread_t threads[num_threads];
+    void *status;
+    vector<ParallelThreadOption> thread_options;
+    thread_options.reserve(num_threads);
+    
+    pthread_barrier_t pthread_barrier;
+    pthread_barrier_init(&pthread_barrier, NULL, num_threads);
+
+    // Create the threads
+    const int thread_count = num_threads == 0 ? bodies.size() : num_threads;
+    for (int i = 0; i < thread_count; i++) {
+        thread_options.push_back({i, thread_count, pthread_barrier, bodies, seconds, output});
+        if (pthread_create(&threads[i], NULL, nbody_parallel_thread, (void*) &thread_options[i])) {
+            cerr << "Unable to create thread " << i << ".\n";
+        }
+    }
+
+    // Join the threads
+    for (int i = 0; i < num_threads; i++) {
+        if (pthread_join(threads[i], &status)) {
+            cerr << "Unable to join thread " << i << ".\n";
+        }
     }
 }
 
@@ -252,14 +299,13 @@ int main (int argc, char* argv[]) {
         cerr << "CUDA implementation not yet implemented.\n";
         return -1;
     } else {
-        // TODO(wentaoyang): CPU parallel implementation
-        cerr << "CPU parallel implementation not yet implemented.\n";
-        return -1;
+        nbody_parallel(bodies, seconds, num_threads, output);
     }
     chrono::steady_clock::time_point end_time = chrono::steady_clock::now();
 
     // ms = ns / 1e6
-    double elapsed_ms = chrono::duration_cast<chrono::nanoseconds> (end_time - start_time).count() / 1000000.0;
+    const double elapsed_ms = chrono::duration_cast<chrono::nanoseconds> (end_time - 
+        start_time).count() / 1000000.0;
     printf("Runtime: %lf ms\n", elapsed_ms);
 
     return 0;
