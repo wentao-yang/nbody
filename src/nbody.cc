@@ -7,12 +7,12 @@
 
 using namespace std;
 
-bool get_flags(const int& argc, char* const argv[], std::string& test_file_name, 
-    bool& random_test, int& num_random_bodies) {
+bool get_flags(const int& argc, const char* const argv[], std::string& test_file_name, 
+    bool& random_test, int& num_random_bodies, bool& output) {
     int command;
 
     // Get flags
-    while ((command = getopt(argc, argv, "f:n:r")) != -1) {
+    while ((command = getopt(argc, argv, "f:n:ro")) != -1) {
         switch (command) {
             case 'f':
                 test_file_name = optarg;
@@ -22,6 +22,9 @@ bool get_flags(const int& argc, char* const argv[], std::string& test_file_name,
                 break;
             case 'r':
                 random_test = true;
+                break;
+            case 'o':
+                output = true;
                 break;
             case '?':
                 if (optopt = 'f') {
@@ -76,10 +79,14 @@ int main (int argc, char* argv[]) {
     string test_file_name = "";
     bool random_test = false;
     int num_random_bodies = 0;
+    bool output = false;
 
-    if (!get_flags(argc, argv, test_file_name, random_test, num_random_bodies)) {
+    if (!get_flags(argc, argv, test_file_name, random_test, num_random_bodies, output)) {
         return -1;
     }
+    cout << output;
 
     vector<Body> bodies = make_bodies(test_file_name, random_test, num_random_bodies);
+
+    
 }
