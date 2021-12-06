@@ -208,7 +208,7 @@ void* nbody_parallel_thread(void* options) {
     const int& seconds = ((ParallelThreadOption*) options)->seconds;
     const bool& output = ((ParallelThreadOption*) options)->output;
 
-    const int bodies_size_round_up = (bodies.size() + num_threads - 1) & (-num_threads);
+    const int bodies_size_round_up = ((bodies.size() + num_threads - 1) / num_threads) * num_threads;
 
     for (int s = 0; s < seconds; s++) {
         if (output && thread_number == 0) {
@@ -243,25 +243,26 @@ void* nbody_parallel_thread(void* options) {
 
 void nbody_parallel(vector<Body>& bodies, const int& seconds, const int& num_threads, 
     const bool& output) {
-    pthread_t threads[num_threads];
+    const int thread_count = num_threads == 0 ? bodies.size() : num_threads;
+
+    pthread_t threads[thread_count];
     void *status;
     vector<ParallelThreadOption> thread_options;
-    thread_options.reserve(num_threads);
+    thread_options.reserve(thread_count);
     
-    pthread_barrier_t pthread_barrier;
-    pthread_barrier_init(&pthread_barrier, NULL, num_threads);
+    pthread_barrier_t barrier;
+    pthread_barrier_init(&barrier, NULL, thread_count);
 
     // Create the threads
-    const int thread_count = num_threads == 0 ? bodies.size() : num_threads;
     for (int i = 0; i < thread_count; i++) {
-        thread_options.push_back({i, thread_count, pthread_barrier, bodies, seconds, output});
+        thread_options.push_back({i, thread_count, barrier, bodies, seconds, output});
         if (pthread_create(&threads[i], NULL, nbody_parallel_thread, (void*) &thread_options[i])) {
             cerr << "Unable to create thread " << i << ".\n";
         }
     }
 
     // Join the threads
-    for (int i = 0; i < num_threads; i++) {
+    for (int i = 0; i < thread_count; i++) {
         if (pthread_join(threads[i], &status)) {
             cerr << "Unable to join thread " << i << ".\n";
         }
