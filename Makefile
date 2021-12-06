@@ -9,5 +9,5 @@ run:
 
 commit:
 	git add -A
-	git commit -m "testing commit"
+	git commit -m "Updated code"
 	git push origin main
