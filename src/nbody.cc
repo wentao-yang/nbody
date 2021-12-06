@@ -15,7 +15,7 @@ int main (int argc, char* argv[]) {
 
     // Get flags
     while ((command = getopt(argc, argv, "f:n:r")) != -1) {
-        switch (command) { 
+        switch (command) {
             case 'f':
                 test_file_name = optarg;
                 break;

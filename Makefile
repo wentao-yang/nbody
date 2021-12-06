@@ -9,5 +9,5 @@ run:
 
 commit:
 	git add -A
-	git commit -m "Added initial files"
+	git commit -m "testing commit"
 	git push origin main
