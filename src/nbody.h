@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-// Gravitational constant
-const double G = 6.67408E-11;
+const double G = 6.67408E-11; // Gravitational constant
+const int THREADS_PER_BLOCK = 512;
 
 /**
  * Struct for keeping track of a vector.
@@ -82,8 +82,8 @@ bool collided(const Body& a, const Body& b);
  * @return true if success; false otherwise
  */
 bool get_flags(const int& argc, char* const argv[], std::string& test_file_name, 
-    bool& random_test, int& num_random_bodies, bool& sequential, bool& cuda, int& num_threads,
-    int& seconds, bool& output);
+    bool& random_test, int& num_random_bodies, bool& sequential, bool& cuda, 
+    int& num_threads, int& seconds, bool& output);
 
 /**
  * Generate the necessary bodies for n-bodies.
@@ -98,12 +98,13 @@ std::vector<Body> make_bodies(const std::string& test_file_name, const bool& ran
     const int& num_random_bodies);
 
 /**
- * Calculates the new acceleration of `bodies[body_num]`.
+ * Calculates the new acceleration of `bodies[body_num]` and reset collided boolean
+ * for all bodies.
  * 
  * @param bodies vector of the bodies
  * @param body_num the index of the body in `bodies`
  */
-void update_acceleration(std::vector<Body>& bodies, int body_num);
+void update_acceleration_and_reset_collided(std::vector<Body>& bodies, int body_num);
 
 /**
  * Handles elastic collisions.
@@ -153,5 +154,14 @@ void* nbody_parallel_thread(void* options);
  */
 void nbody_parallel(std::vector<Body>& bodies, const int& seconds, const int& num_threads, 
     const bool& output);
+
+/**
+ * CUDA implementation.
+ * 
+ * @param bodies vector of the bodies
+ * @param seconds number of seconds to run the simulation
+ * @param output write nbody results to std::cout if true
+ */
+void nbody_cuda(const std::vector<Body>& bodies, const int& seconds, const bool& output);
 
 #endif

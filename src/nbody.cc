@@ -111,7 +111,7 @@ vector<Body> make_bodies(const string& test_file_name, const bool& random_test,
     return bodies;
 }
 
-void update_acceleration(vector<Body>& bodies, int body_num) {
+void update_acceleration_and_reset_collided(vector<Body>& bodies, int body_num) {
     bodies[body_num].acc_.x_ = 0;
     bodies[body_num].acc_.y_ = 0;
     bodies[body_num].acc_.z_ = 0;
@@ -120,11 +120,14 @@ void update_acceleration(vector<Body>& bodies, int body_num) {
     for (int i = 0; i < bodies.size(); i++) {
         if (i != body_num) {
             const double d = bodies_distance(bodies[body_num], bodies[i]);
-            const double g = (bodies[i].mass_ * G) / (pow(d, 3));
+            const double g = (bodies[i].mass_ * G) / pow(d, 3);
 
-            bodies[body_num].acc_.x_ += g * (bodies[i].pos_.x_ - bodies[body_num].pos_.x_);
-            bodies[body_num].acc_.y_ += g * (bodies[i].pos_.y_ - bodies[body_num].pos_.y_);
-            bodies[body_num].acc_.z_ += g * (bodies[i].pos_.z_ - bodies[body_num].pos_.z_);
+            bodies[body_num].acc_.x_ += g * (bodies[i].pos_.x_ 
+                - bodies[body_num].pos_.x_);
+            bodies[body_num].acc_.y_ += g * (bodies[i].pos_.y_ 
+                - bodies[body_num].pos_.y_);
+            bodies[body_num].acc_.z_ += g * (bodies[i].pos_.z_ 
+                - bodies[body_num].pos_.z_);
         }
     }
 }
@@ -136,10 +139,12 @@ void handle_collisions(vector<Body>& bodies) {
                 bodies[i].collided_ = true;
                 bodies[j].collided_ = true;
 
-                const double k1 = (2 * bodies[i].mass_) / (bodies[i].mass_ + bodies[j].mass_);
+                const double k1 = (2 * bodies[i].mass_) / (bodies[i].mass_ 
+                    + bodies[j].mass_);
                 const double k2 = (bodies[i].mass_ - bodies[j].mass_) / (bodies[i].mass_ 
                     + bodies[j].mass_);
-                const double k3 = (2 * bodies[j].mass_) / (bodies[i].mass_ + bodies[j].mass_);
+                const double k3 = (2 * bodies[j].mass_) / (bodies[i].mass_ 
+                    + bodies[j].mass_);
 
                 double tmpvel_ = bodies[i].vel_.x_;
                 bodies[i].vel_.x_ = (k2 * tmpvel_) + (k3 * bodies[j].vel_.x_);
@@ -172,8 +177,8 @@ void output_result(const std::vector<Body>& bodies, const int& second) {
             << bodies[i].pos_.z_ << ")\n";
         cout << "Velocity: (" << bodies[i].vel_.x_ << ", " << bodies[i].vel_.y_ << ", " 
             << bodies[i].vel_.z_ << ")\n";
-        cout << "Acceleration: (" << bodies[i].acc_.x_ << ", " << bodies[i].acc_.y_ << ", " 
-            << bodies[i].acc_.z_ << ")\n";
+        cout << "Acceleration: (" << bodies[i].acc_.x_ << ", " << bodies[i].acc_.y_ << 
+            ", " << bodies[i].acc_.z_ << ")\n";
     }
     cout << "\n";
 }
@@ -185,7 +190,7 @@ void nbody_sequential(vector<Body>& bodies, const int& seconds, const bool& outp
         }
 
         for (int i = 0; i < bodies.size(); i++) {
-            update_acceleration(bodies, i);
+            update_acceleration_and_reset_collided(bodies, i);
         }
 
         handle_collisions(bodies);
@@ -208,7 +213,8 @@ void* nbody_parallel_thread(void* options) {
     const int& seconds = ((ParallelThreadOption*) options)->seconds;
     const bool& output = ((ParallelThreadOption*) options)->output;
 
-    const int bodies_size_round_up = ((bodies.size() + num_threads - 1) / num_threads) * num_threads;
+    const int bodies_size_round_up = ((bodies.size() + num_threads - 1) / num_threads) 
+        * num_threads;
 
     for (int s = 0; s < seconds; s++) {
         if (output && thread_number == 0) {
@@ -218,7 +224,7 @@ void* nbody_parallel_thread(void* options) {
 
         for (int i = thread_number; i < bodies_size_round_up; i+=num_threads) {
             if (i < bodies.size()) {
-                update_acceleration(bodies, i);
+                update_acceleration_and_reset_collided(bodies, i);
             }
             pthread_barrier_wait(&barrier_);
         }
@@ -256,7 +262,8 @@ void nbody_parallel(vector<Body>& bodies, const int& seconds, const int& num_thr
     // Create the threads
     for (int i = 0; i < thread_count; i++) {
         thread_options.push_back({i, thread_count, barrier, bodies, seconds, output});
-        if (pthread_create(&threads[i], NULL, nbody_parallel_thread, (void*) &thread_options[i])) {
+        if (pthread_create(&threads[i], NULL, nbody_parallel_thread, (void*) 
+            &thread_options[i])) {
             cerr << "Unable to create thread " << i << ".\n";
         }
     }
@@ -272,7 +279,8 @@ void nbody_parallel(vector<Body>& bodies, const int& seconds, const int& num_thr
 int main (int argc, char* argv[]) {
     // Flags
     string test_file_name = ""; // string specifying the file of the test -f
-    bool random_test = false; // generate random bodies for test instead of using test file if true -r
+    bool random_test = false; // generate random bodies for test instead of using test file 
+        // if true -r
     int num_random_bodies = 0; // number of random bodies to generate if `random_test` -n
     bool sequential = false; // use sequential implementation if true -s
     bool cuda = false; // use CUDA implementation if true and `sequential` is false -c
@@ -296,9 +304,7 @@ int main (int argc, char* argv[]) {
     if (sequential) {
         nbody_sequential(bodies, seconds, output);
     } else if (cuda) {
-        // TODO(wentaoyang): CUDA implementation
-        cerr << "CUDA implementation not yet implemented.\n";
-        return -1;
+        nbody_cuda(bodies, seconds, output);
     } else {
         nbody_parallel(bodies, seconds, num_threads, output);
     }
