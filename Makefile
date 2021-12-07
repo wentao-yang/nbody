@@ -27,5 +27,5 @@ run:
 
 commit:
 	git add -A
-	git commit -m "Fixed CUDA implementation bug"
+	git commit -m "Added expected results"
 	git push origin main
