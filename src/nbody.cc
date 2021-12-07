@@ -117,6 +117,7 @@ void update_acceleration_and_reset_collided(vector<Body>& bodies, int body_num) 
     bodies[body_num].acc_.z_ = 0;
     bodies[body_num].collided_ = false;
 
+    // Calculate gravitational pull from every other body
     for (int i = 0; i < bodies.size(); i++) {
         if (i != body_num) {
             const double d = bodies_distance(bodies[body_num], bodies[i]);
@@ -139,6 +140,7 @@ void handle_collisions(vector<Body>& bodies) {
                 bodies[i].collided_ = true;
                 bodies[j].collided_ = true;
 
+                // Formula for elastic collision
                 const double k1 = (2 * bodies[i].mass_) / (bodies[i].mass_ 
                     + bodies[j].mass_);
                 const double k2 = (bodies[i].mass_ - bodies[j].mass_) / (bodies[i].mass_ 
@@ -213,6 +215,7 @@ void* nbody_parallel_thread(void* options) {
     const int& seconds = ((ParallelThreadOption*) options)->seconds;
     const bool& output = ((ParallelThreadOption*) options)->output;
 
+    // `bodies_size_round_up` is the next multiple of num_threads larger than bodies.size()
     const int bodies_size_round_up = ((bodies.size() + num_threads - 1) / num_threads) 
         * num_threads;
 

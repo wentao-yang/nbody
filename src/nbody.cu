@@ -27,12 +27,13 @@ __global__ void update_acceleration_and_reset_collided_cuda(double* const accele
         acceleration[index * 3 + 2] = 0;
         collided[index] = false;
 
+        // Calculate gravitational pull from every other body
         for (int i = 0; i < num_bodies; i++) {
             if (i != index) {
                 const double d = sqrt(pow(positions[index * 3] - positions[i * 3], 2) 
                     + pow(positions[index * 3 + 1] - positions[i * 3 + 1], 2)
                     + pow(positions[index * 3 + 2] - positions[i * 3 + 2], 2));
-                const double g = (masses[index] * G) / pow(d, 3);
+                const double g = (masses[i] * G) / pow(d, 3);
 
                 acceleration[index * 3] += g * (positions[i * 3] - positions[index * 3]);
                 acceleration[index * 3 + 1] += g * (positions[i * 3 + 1] - 
@@ -91,6 +92,7 @@ void handle_collisions_cuda(double* const velocities, double* const positions,
                 collided[i] = true;
                 collided[j] = true;
 
+                // Formula for elastic collision
                 const double k1 = (2 * masses[i]) / (masses[i] + masses[j]);
                 const double k2 = (masses[i] -  masses[j]) / (masses[i] + masses[j]);
                 const double k3 = (2 * masses[j]) / (masses[i] + masses[j]);

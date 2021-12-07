@@ -5,7 +5,7 @@
 #include <vector>
 
 const double G = 6.67408E-11; // Gravitational constant
-const int THREADS_PER_BLOCK = 512;
+const int THREADS_PER_BLOCK = 512; // For CUDA
 
 /**
  * Struct for keeping track of a vector.
@@ -36,7 +36,8 @@ struct Body {
 };
 
 /**
- * Struct for the options of a pthread.
+ * Struct for the options of a pthread for the CPU parallel
+ * implementation.
  */
 struct ParallelThreadOption {
     const int thread_number_;
