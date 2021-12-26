@@ -129,7 +129,7 @@ class NBodySimulator {
         pthread_barrier_t& barrier_;
         std::vector<Body>& bodies_;
         const int& seconds;
-        const bool& output;
+        const int& output;
     };
 
     /**

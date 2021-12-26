@@ -1,7 +1,7 @@
 n = 4000
 s = 120
 
-tests:
+test:
 	make compile
 	./nbody -t 0 -r $(n) -i 0 -s $(s)
 	./nbody -t 0 -r $(n) -i 1 -n 1 -s $(s)
@@ -20,5 +20,5 @@ compile:
 
 commit:
 	git add -A
-	git commit -m "Reorganized code in an OOP manner."
+	git commit -m "Fixed output bug."
 	git push origin main
