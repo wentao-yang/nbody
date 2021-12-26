@@ -128,8 +128,8 @@ class NBodySimulator {
         const int& num_threads_;
         pthread_barrier_t& barrier_;
         std::vector<Body>& bodies_;
-        const int& seconds;
-        const int& output;
+        const int& seconds_;
+        const int& output_;
     };
 
     /**

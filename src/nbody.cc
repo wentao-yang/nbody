@@ -201,8 +201,8 @@ void* NBodySimulator::cpu_parallel_thread(void* options) {
     const int& num_threads = ((CPUParallelThreadOption*) options)->num_threads_;
     pthread_barrier_t& barrier_ = ((CPUParallelThreadOption*) options)->barrier_;
     vector<Body>& bodies = ((CPUParallelThreadOption*) options)->bodies_;
-    const int& seconds = ((CPUParallelThreadOption*) options)->seconds;
-    const int& output = ((CPUParallelThreadOption*) options)->output;
+    const int& seconds = ((CPUParallelThreadOption*) options)->seconds_;
+    const int& output = ((CPUParallelThreadOption*) options)->output_;
 
     // `bodies_size_round_up` is the next multiple of num_threads larger than bodies.size()
     const int bodies_size_round_up = ((bodies.size() + num_threads - 1) / num_threads) 
