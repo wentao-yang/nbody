@@ -52,7 +52,7 @@ In this figure, the total runtime for the different scenarios is shown. Although
 
 To finalize the results, the N threaded CPU parallel implementation reigned supreme in the tests, while the CUDA implementation came in at second. The former appears to be increasing at a faster pace than the latter, so at a large enough body count/simulation time combination, the CUDA implementation will be faster than any of the other implementations. 2 threads performed the worst, while 1 thread matched the sequential implementation in terms of performance. It gets better after 2, as 4, 8, and 16 threads all performed better than their lower thread count counterparts. 
 
-Here is the visualization for a scenario with 100 random bodies simulated for 600 seconds:
+Here is the visualization for a scenario with 100 random bodies simulated for 600 simulation seconds:
 
 ![Visualization for Scenario with 100 Random Bodies for 600 Seconds](https://github.com/wentao-yang/nbody/blob/main/figures/random_r100_s600_results.gif?raw=true)
 
