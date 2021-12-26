@@ -1,5 +1,5 @@
-n = 2000
-s = 15
+n = 100
+s = 600
 
 test:
 	make compile
@@ -12,6 +12,9 @@ test:
 	./nbody -t 0 -r $(n) -i 1 -n 0 -s $(s)
 	./nbody -t 0 -r $(n) -i 2 -s $(s)
 
+visualize:
+	python3 src/visualize.py -s < expected_test_results/random_r$(n)_s$(s)_o2_results.txt
+
 compile:
 	nvcc -o main.o -c src/main.cc
 	nvcc -o nbody.o -c src/nbody.cc
@@ -20,5 +23,5 @@ compile:
 
 commit:
 	git add -A
-	git commit -m "Formatted output for potential visualization."
+	git commit -m "Added visualization."
 	git push origin main
