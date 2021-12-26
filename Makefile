@@ -13,6 +13,7 @@ test:
 	./nbody -t 0 -r $(n) -i 2 -s $(s)
 
 visualize:
+	pip3 install -r requirements.txt
 	python3 src/visualize.py -s < expected_test_results/random_r$(n)_s$(s)_o2_results.txt
 
 compile:
@@ -23,5 +24,5 @@ compile:
 
 commit:
 	git add -A
-	git commit -m "Added visualization."
+	git commit -m "Created requirements.txt file."
 	git push origin main
