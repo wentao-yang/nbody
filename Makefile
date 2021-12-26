@@ -21,8 +21,3 @@ compile:
 	nvcc -o nbody.o -c src/nbody.cc
 	nvcc -o nbody_cuda.o -c src/nbody.cu
 	nvcc -o nbody main.o nbody.o nbody_cuda.o
-
-commit:
-	git add -A
-	git commit -m "Created requirements.txt file."
-	git push origin main

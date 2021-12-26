@@ -17,10 +17,10 @@ def get_results():
     results = []
     radii = []
 
-    for i in range(seconds):
+    for i in range(seconds): # Every second
         result_this_second = np.zeros((num_bodies, 3))
 
-        for j in range(num_bodies):
+        for j in range(num_bodies): # Every body
             x, y, z, radius = [float(k) for k in input().split()]
             result_this_second[j][0] = x
             result_this_second[j][1] = y
@@ -38,7 +38,7 @@ def update(iteration, results, plot):
     Updates the scatter plot given the current iteration, results,
     and the current plot.
     """
-    for i in range(results[0].shape[0]):
+    for i in range(results[0].shape[0]): # Every body
         plot[i]._offsets3d = (results[iteration][i,0:1], results[iteration][i,1:2], 
             results[iteration][i,2:])
     return plot
@@ -48,9 +48,9 @@ def animate(results, radii, save=False):
     Generates the visualization given the results and radii. Saves the animation
     as a .gif if `save` is True.
     """
+    plt.style.use('dark_background')
     fig = plt.figure()
     ax = p3.Axes3D(fig)
-    plt.style.use('dark_background')
 
     plot = [ax.scatter(results[0][i,0:1], results[0][i,1:2], results[0][i,2:],
         s=radii[i]) for i in range(results[0].shape[0])]
@@ -67,7 +67,7 @@ def animate(results, radii, save=False):
 
     if save:
         writergif = animation.PillowWriter(fps=60)
-        ani.save('figures/random_r100_s600_results.gif', writer=writergif)
+        ani.save('figures/nbody.gif', writer=writergif)
     else:
         plt.show()
 
