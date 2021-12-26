@@ -63,7 +63,7 @@ int main (int argc, char* argv[]) {
     int test_type = -1; // generate random bodies: 0, get bodies from input file: 1 -t
     int num_random_bodies = -1; // number of random bodies to generate if `test_type` = 0 -r
     string test_file_name = ""; // string specifying the file of the test if `test_type` = 1 -f
-    int implementation = -1; // sequential: 0, CPU parallel: 1, CUDA: 2
+    int implementation = -1; // sequential: 0, CPU parallel: 1, CUDA: 2 -i
     int num_threads = -1; // number of threads to create if `implementation` = 1, 
         // 0 to match number of bodies -n
     int seconds = -1; // number of seconds to run the simulation -s
