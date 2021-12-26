@@ -1,9 +1,7 @@
 #include "nbody.h"
 
-#include <getopt.h>
 #include <math.h>
 #include <pthread.h> 
-#include <stdlib.h>
 
 #include <chrono>
 #include <fstream>
@@ -11,107 +9,115 @@
 
 using namespace std;
 
-double bodies_distance(const Body& a, const Body& b) {
+NBodySimulator::NBodySimulator(int test_type, int num_random_bodies, string test_file_name) {
+    if (test_type == 0) { // Generate random bodies
+        if (num_random_bodies <= 0) {
+            cerr << "[ERROR] `num_random_bodies` should be above 0. Actual: " << 
+                num_random_bodies << "\n";
+        }
+
+        for (int i = 0; i < num_random_bodies; i++) {
+            bodies_.push_back({{(double) (rand() % 100000) - 50000, (double) 
+            (rand() % 100000) - 50000, (double) (rand() % 100000) - 50000}, {0, 0, 0}, 
+            {0, 0, 0}, (double) (rand() % 1000) * 1E9, (double) (rand() % 100), false});
+        }
+    } else if (test_type == 1) { // Get bodies from input file
+        if (test_file_name.empty()) {
+            cerr << "[ERROR] `test_file_name` should not be empty.\n";
+            return;
+        }
+
+        // Open test file
+        ifstream file(test_file_name);
+        if (!file.is_open()) {
+            cerr << "[ERROR] Could not open the test file: " << test_file_name << ".\n";
+            return;
+        }
+
+        int num_bodies;
+        file >> num_bodies;
+
+        for (int i = 0; i < num_bodies; i++) {
+            double x, y, z, mass, radius;
+            file >> x >> y >> z >> mass >> radius;
+            bodies_.push_back({{x, y, z}, {0, 0, 0}, {0, 0, 0}, mass, radius, false});
+        }
+
+        file.close();
+    } else {
+        cerr << "[ERROR] `test_type` should be either 0 or 1. Actual: " << test_type << "\n";
+    }
+}
+
+bool NBodySimulator::simulate(int implementation, int num_threads, int seconds, int output) {
+    // Check preconditions
+    if (bodies_.size() == 0) {
+        cerr << "[ERROR] The number of bodies is 0.\n";
+        return false;
+    }
+    if (seconds <= 0) {
+        cerr << "[ERROR] `seconds` should be above 0. Actual: " << seconds << "\n";
+        return false;
+    }
+    if (output < 0 || output > 3) {
+        cerr << "[ERROR] `output` should be between [0, 3]. Actual: " << output << "\n";
+        return false;
+    }
+
+    chrono::steady_clock::time_point start_time = chrono::steady_clock::now();
+    if (implementation == 0) {
+        sequential(bodies_, seconds, output);
+    } else if (implementation == 1) {
+        if (num_threads < 0) {
+            cerr << "[ERROR] `num_threads` should be greater than or equal to 0. Actual: " 
+                << num_threads << "\n";
+            return false;
+        }
+        cpu_parallel(bodies_, num_threads, seconds, output);
+    } else if (implementation == 2) {
+        cuda(bodies_, seconds, output);
+    } else {
+        cerr << "[ERROR] `implementation` should be between [0, 2]. Actual: " << implementation 
+            << "\n";
+        return false;
+    }
+    chrono::steady_clock::time_point end_time = chrono::steady_clock::now();
+
+    if (output == 1 || output == 3) {
+        // ms = ns / 1e6
+        const double elapsed_ms = chrono::duration_cast<chrono::nanoseconds> (end_time - 
+            start_time).count() / 1000000.0;
+        printf("Runtime: %lf ms\n", elapsed_ms);
+    }
+
+    return true;
+}
+
+double NBodySimulator::bodies_distance(const Body& a, const Body& b) {
     return sqrt(pow(a.pos_.x_ - b.pos_.x_, 2) + pow(a.pos_.y_ - b.pos_.y_, 2) 
         + pow(a.pos_.z_ - b.pos_.z_, 2));
 }
 
-bool collided(const Body& a, const Body& b) {
+bool NBodySimulator::collided(const Body& a, const Body& b) {
     return bodies_distance(a, b) < (a.radius_ + b.radius_);
 }
 
-bool get_flags(const int& argc, char* const argv[], string& test_file_name, 
-    bool& random_test, int& num_random_bodies, bool& sequential, bool& cuda, 
-    int& num_threads, int& seconds, bool& output) {
-    int command;
-
-    // Get flags
-    while ((command = getopt(argc, argv, "f:n:t:x:rsco")) != -1) {
-        switch (command) {
-            case 'f':
-                test_file_name = optarg;
-                break;
-            case 'n':
-                num_random_bodies = atoi(optarg);
-                break;
-            case 't':
-                num_threads = atoi(optarg);
-                break;
-            case 'x':
-                seconds = atoi(optarg);
-                break;
-            case 'r':
-                random_test = true;
-                break;
-            case 's':
-                sequential = true;
-                break;
-            case 'c':
-                cuda = true;
-                break;
-            case 'o':
-                output = true;
-                break;
-            case '?':
-                if (optopt = 'f') {
-                    cerr << "Option -f requires a string.\n";
-                } else if (optopt = 'n') {
-                    cerr << "Option -n requires an integer.\n";
-                } else if (optopt = 't') {
-                    cerr << "Option -t requires an integer.\n";
-                } else if (optopt = 'x') {
-                    cerr << "Option -x requires an integer.\n";
-                } else if (isprint(optopt)) {
-                    cerr << "Unknown option: " << optopt << ".\n";
-                } else {
-                    cerr << "Unknown character: " << optopt << ".\n";
-                }
-            default:
-                return false;
-        }
+void NBodySimulator::output_result(const vector<Body>& bodies, const int& second) {
+    cout << "Second: " << second << "\n";
+    for (int i = 0; i < bodies.size(); i++) {
+        cout << "Body: " << i << "\n";
+        cout << "Position: (" << bodies[i].pos_.x_ << ", " << bodies[i].pos_.y_ << ", " 
+            << bodies[i].pos_.z_ << ")\n";
+        cout << "Velocity: (" << bodies[i].vel_.x_ << ", " << bodies[i].vel_.y_ << ", " 
+            << bodies[i].vel_.z_ << ")\n";
+        cout << "Acceleration: (" << bodies[i].acc_.x_ << ", " << bodies[i].acc_.y_ << 
+            ", " << bodies[i].acc_.z_ << ")\n";
     }
-    return true;
+    cout << "\n";
 }
 
-vector<Body> make_bodies(const string& test_file_name, const bool& random_test, 
-    const int& num_random_bodies) {
-    vector<Body> bodies;
-
-    if (random_test) {
-        for (int i = 0; i < num_random_bodies; i++) {
-            bodies.push_back({{(double) (rand() % 100000) - 50000, (double) 
-            (rand() % 100000) - 50000, (double) (rand() % 100000) - 50000}, {0, 0, 0}, 
-            {0, 0, 0}, (double) (rand() % 1000) * 1E9, (double) (rand() % 100), false});
-        }
-    } else {
-        if (test_file_name.empty()) {
-            cerr << "Test file name cannot be empty.\n";
-            return bodies;
-        }
-
-        // Open test file
-        ifstream test(test_file_name);
-        if (!test.is_open()) {
-            cerr << "Could not open the test file: " << test_file_name << ".\n";
-            return bodies;
-        }
-
-        int num_bodies;
-        test >> num_bodies;
-
-        for (int i = 0; i < num_bodies; i++) {
-            double x, y, z, mass, radius;
-            test >> x >> y >> z >> mass >> radius;
-            bodies.push_back({{x, y, z}, {0, 0, 0}, {0, 0, 0}, mass, radius, false});
-        }
-
-        test.close();
-    }
-
-    return bodies;
-}
-
-void update_acceleration_and_reset_collided(vector<Body>& bodies, int body_num) {
+void NBodySimulator::update_acceleration_and_reset_collided(vector<Body>& bodies, 
+    const int& body_num) {
     bodies[body_num].acc_.x_ = 0;
     bodies[body_num].acc_.y_ = 0;
     bodies[body_num].acc_.z_ = 0;
@@ -121,7 +127,7 @@ void update_acceleration_and_reset_collided(vector<Body>& bodies, int body_num) 
     for (int i = 0; i < bodies.size(); i++) {
         if (i != body_num) {
             const double d = bodies_distance(bodies[body_num], bodies[i]);
-            const double g = (bodies[i].mass_ * G) / pow(d, 3);
+            const double g = (bodies[i].mass_ * G_) / pow(d, 3);
 
             bodies[body_num].acc_.x_ += g * (bodies[i].pos_.x_ 
                 - bodies[body_num].pos_.x_);
@@ -133,14 +139,14 @@ void update_acceleration_and_reset_collided(vector<Body>& bodies, int body_num) 
     }
 }
 
-void handle_collisions(vector<Body>& bodies) {
+void NBodySimulator::handle_collisions(vector<Body>& bodies) {
     for (int i = 0; i < bodies.size(); i++) {
         for (int j = 0; j < i; j++) {
             if (collided(bodies[i], bodies[j])) {
                 bodies[i].collided_ = true;
                 bodies[j].collided_ = true;
 
-                // Formula for elastic collision
+                // Using formula for elastic collision
                 const double k1 = (2 * bodies[i].mass_) / (bodies[i].mass_ 
                     + bodies[j].mass_);
                 const double k2 = (bodies[i].mass_ - bodies[j].mass_) / (bodies[i].mass_ 
@@ -164,30 +170,16 @@ void handle_collisions(vector<Body>& bodies) {
     }
 }
 
-void update_velocity_and_location(Body& body) {
+void NBodySimulator::update_velocity_and_location(Body& body) {
     if (!body.collided_) {
         body.vel_ += body.acc_;
     }
     body.pos_ += body.vel_;
 }
 
-void output_result(const std::vector<Body>& bodies, const int& second) {
-    cout << "Second: " << second << "\n";
-    for (int i = 0; i < bodies.size(); i++) {
-        cout << "Body: " << i << "\n";
-        cout << "Position: (" << bodies[i].pos_.x_ << ", " << bodies[i].pos_.y_ << ", " 
-            << bodies[i].pos_.z_ << ")\n";
-        cout << "Velocity: (" << bodies[i].vel_.x_ << ", " << bodies[i].vel_.y_ << ", " 
-            << bodies[i].vel_.z_ << ")\n";
-        cout << "Acceleration: (" << bodies[i].acc_.x_ << ", " << bodies[i].acc_.y_ << 
-            ", " << bodies[i].acc_.z_ << ")\n";
-    }
-    cout << "\n";
-}
-
-void nbody_sequential(vector<Body>& bodies, const int& seconds, const bool& output) {
+void NBodySimulator::sequential(vector<Body> bodies, const int& seconds, const int& output) {
     for (int s = 0; s < seconds; s++) {
-        if (output) {
+        if (output == 2 || output == 3) {
             output_result(bodies, s);
         }
 
@@ -202,18 +194,18 @@ void nbody_sequential(vector<Body>& bodies, const int& seconds, const bool& outp
         }
     }
 
-    if (output) {
+    if (output == 2 || output == 3) {
         output_result(bodies, seconds);
     }
 }
 
-void* nbody_parallel_thread(void* options) {
-    const int& thread_number = ((ParallelThreadOption*) options)->thread_number_;
-    const int& num_threads = ((ParallelThreadOption*) options)->num_threads_;
-    pthread_barrier_t& barrier_ = ((ParallelThreadOption*) options)->barrier_;
-    vector<Body>& bodies = ((ParallelThreadOption*) options)->bodies_;
-    const int& seconds = ((ParallelThreadOption*) options)->seconds;
-    const bool& output = ((ParallelThreadOption*) options)->output;
+void* NBodySimulator::cpu_parallel_thread(void* options) {
+    const int& thread_number = ((CPUParallelThreadOption*) options)->thread_number_;
+    const int& num_threads = ((CPUParallelThreadOption*) options)->num_threads_;
+    pthread_barrier_t& barrier_ = ((CPUParallelThreadOption*) options)->barrier_;
+    vector<Body>& bodies = ((CPUParallelThreadOption*) options)->bodies_;
+    const int& seconds = ((CPUParallelThreadOption*) options)->seconds;
+    const bool& output = ((CPUParallelThreadOption*) options)->output;
 
     // `bodies_size_round_up` is the next multiple of num_threads larger than bodies.size()
     const int bodies_size_round_up = ((bodies.size() + num_threads - 1) / num_threads) 
@@ -250,22 +242,22 @@ void* nbody_parallel_thread(void* options) {
     }
 }
 
-void nbody_parallel(vector<Body>& bodies, const int& seconds, const int& num_threads, 
-    const bool& output) {
+void NBodySimulator::cpu_parallel(vector<Body> bodies, const int& num_threads, const int& seconds, 
+    const int& output) {
     const int thread_count = num_threads == 0 ? bodies.size() : num_threads;
 
     pthread_t threads[thread_count];
     void *status;
-    vector<ParallelThreadOption> thread_options;
+    vector<CPUParallelThreadOption> thread_options;
     thread_options.reserve(thread_count);
-    
+
     pthread_barrier_t barrier;
     pthread_barrier_init(&barrier, NULL, thread_count);
 
     // Create the threads
     for (int i = 0; i < thread_count; i++) {
         thread_options.push_back({i, thread_count, barrier, bodies, seconds, output});
-        if (pthread_create(&threads[i], NULL, nbody_parallel_thread, (void*) 
+        if (pthread_create(&threads[i], NULL, cpu_parallel_thread, (void*) 
             &thread_options[i])) {
             cerr << "Unable to create thread " << i << ".\n";
         }
@@ -277,46 +269,4 @@ void nbody_parallel(vector<Body>& bodies, const int& seconds, const int& num_thr
             cerr << "Unable to join thread " << i << ".\n";
         }
     }
-}
-
-int main (int argc, char* argv[]) {
-    // Flags
-    string test_file_name = ""; // string specifying the file of the test -f
-    bool random_test = false; // generate random bodies for test instead of using test file 
-        // if true -r
-    int num_random_bodies = 0; // number of random bodies to generate if `random_test` -n
-    bool sequential = false; // use sequential implementation if true -s
-    bool cuda = false; // use CUDA implementation if true and `sequential` is false -c
-    int num_threads = 0; // number of threads to create if using CPU parallel implementation -t
-    int seconds = 0; // number of seconds to run the simulation -x
-    bool output = false; // output nbody results if true -o
-
-    if (!get_flags(argc, argv, test_file_name, random_test, num_random_bodies, sequential, 
-        cuda, num_threads, seconds, output)) {
-        cerr << "Getting flags failed.\n";
-        return -1;
-    }
-
-    vector<Body> bodies = make_bodies(test_file_name, random_test, num_random_bodies);
-    if (bodies.size() == 0) {
-        cerr << "Creating bodies failed.\n";
-        return -1;
-    }
-
-    chrono::steady_clock::time_point start_time = chrono::steady_clock::now();
-    if (sequential) {
-        nbody_sequential(bodies, seconds, output);
-    } else if (cuda) {
-        nbody_cuda(bodies, seconds, output);
-    } else {
-        nbody_parallel(bodies, seconds, num_threads, output);
-    }
-    chrono::steady_clock::time_point end_time = chrono::steady_clock::now();
-
-    // ms = ns / 1e6
-    const double elapsed_ms = chrono::duration_cast<chrono::nanoseconds> (end_time - 
-        start_time).count() / 1000000.0;
-    printf("Runtime: %lf ms\n", elapsed_ms);
-
-    return 0;
 }

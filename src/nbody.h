@@ -4,11 +4,8 @@
 #include <string>
 #include <vector>
 
-const double G = 6.67408E-11; // Gravitational constant
-const int THREADS_PER_BLOCK = 512; // For CUDA
-
 /**
- * Struct for keeping track of a vector.
+ * @brief Struct for keeping track of a 3D vector.
  */
 struct Vector3D {
     double x_;
@@ -24,7 +21,7 @@ struct Vector3D {
 };
 
 /**
- * Struct for keeping track of a body.
+ * @brief Struct for keeping track of a body.
  */
 struct Body {
     Vector3D pos_; // Position
@@ -36,133 +33,135 @@ struct Body {
 };
 
 /**
- * Struct for the options of a pthread for the CPU parallel
- * implementation.
+ * @brief Class to for nbody simulation.
  */
-struct ParallelThreadOption {
-    const int thread_number_;
-    const int& num_threads_;
-    pthread_barrier_t& barrier_;
-    std::vector<Body>& bodies_;
-    const int& seconds;
-    const bool& output;
+class NBodySimulator {
+  public:
+    /**
+     * @brief Construct a new NBodySimulator object and prepare the bodies.
+     * 
+     * @param test_type generate random bodies: 0, get bodies from input file: 1
+     * @param num_random_bodies number of random bodies to generate if `test_type` = 0
+     * @param test_file_name string specifying the file of the test if `test_type` = 1
+     */
+    NBodySimulator(int test_type, int num_random_bodies, std::string test_file_name);
+
+    /**
+     * @brief Attempt the nbody simulation and printing the appropriate information.
+     * This method is safe to be repeated.
+     * 
+     * @param implementation sequential: 0, CPU parallel: 1, CUDA: 2
+     * @param num_threads number of threads to create if `implementation` = 1, 0 to match 
+     * number of bodies
+     * @param seconds number of seconds to run the simulation
+     * @param output no output: 0, performance: 1, results: 2, all: 3
+     * @return true if preconditions pass; false otherwise
+     */
+    bool simulate(int implementation, int num_threads, int seconds, int output);
+
+    static constexpr double G_ = 6.67408E-11; // Gravitational constant
+
+  private:
+    /**
+     * @brief Get the Euclidean distance between two bodies.
+     * 
+     * @param a a body
+     * @param b another body
+     * @return the Euclidean distance between the two bodies 
+     */
+    static double bodies_distance(const Body& a, const Body& b);
+
+    /**
+     * @brief Checks if two bodies are collided.
+     * 
+     * @param a a body
+     * @param b another body
+     * @return true if the bodies are collided.
+     */
+    static bool collided(const Body& a, const Body& b);
+
+    /**
+     * @brief Print the current result of the simulation at this simulation second.
+     * 
+     * @param bodies vector of the bodies
+     * @param second current second of simulation
+     */
+    static void output_result(const std::vector<Body>& bodies, const int& second);
+
+    /**
+     * @brief Calculates the new acceleration of `bodies[body_num]` and reset collided 
+     * boolean for all bodies.
+     * 
+     * @param bodies vector of the bodies
+     * @param body_num the index of the body in `bodies`
+     */
+    static void update_acceleration_and_reset_collided(std::vector<Body>& bodies, 
+        const int& body_num);
+
+    /**
+     * @brief Handles elastic collisions.
+     * 
+     * @param bodies vector of the bodies
+     */
+    static void handle_collisions(std::vector<Body>& bodies);
+
+    /**
+     * @brief Calculates the new velocity and location of `body`.
+     * 
+     * @param body body to be updated
+     */
+    static void update_velocity_and_location(Body& body);
+
+    /**
+     * @brief Sequential implementation.
+     * 
+     * @param seconds number of seconds to run the simulation
+     * @param output no output: 0, performance: 1, results: 2, all: 3
+     */
+    void sequential(std::vector<Body> bodies, const int& seconds, const int& output);
+
+    /**
+     * @brief Struct for the options of a pthread for the CPU parallel implementation.
+     */
+    struct CPUParallelThreadOption {
+        const int thread_number_;
+        const int& num_threads_;
+        pthread_barrier_t& barrier_;
+        std::vector<Body>& bodies_;
+        const int& seconds;
+        const bool& output;
+    };
+
+    /**
+     * @brief Function for a single thread in the CPU parallel implementation.
+     * 
+     * @param options pointer to the ParallelThreadOption of this thread
+     */ 
+    static void* cpu_parallel_thread(void* options);
+
+    /**
+     * @brief CPU parallel implementation.
+     * 
+     * @param bodies vector of the bodies
+     * @param num_threads number of threads to create if using CPU parallel implementation
+     * @param seconds number of seconds to run the simulation
+     * @param output write nbody results to std::cout if true
+     */
+    void cpu_parallel(std::vector<Body> bodies, const int& num_threads, const int& seconds, 
+        const int& output);
+
+    /**
+     * @brief Basic CUDA implementation.
+     * 
+     * @param bodies vector of the bodies
+     * @param seconds number of seconds to run the simulation
+     * @param output write nbody results to std::cout if true
+     */
+    void cuda(const std::vector<Body>& bodies, const int& seconds, const bool& output);
+
+    static constexpr int THREADS_PER_BLOCK_ = 512; // For CUDA
+
+    std::vector<Body> bodies_;
 };
-
-/**
- * Get the Euclidean distance between two bodies.
- * 
- * @param a a body
- * @param b another body
- */
-double bodies_distance(const Body& a, const Body& b);
-
-/**
- * Checks if two bodies are collided.
- * 
- * @param a a body
- * @param b another body
- * 
- * @return true if the bodies are collided.
- */
-bool collided(const Body& a, const Body& b);
-
-/**
- * Retrieve command flags.
- * 
- * @param argc argc
- * @param argv argv
- * @param test_file_name string specifying the file of the test 
- * @param random_test generate random bodies for test instead of using test file if true
- * @param num_random_bodies number of random bodies to generate if `random_test`
- * @param sequential use sequential implementation if true
- * @param cuda use CUDA implementation if true and `sequential` is false
- * @param num_threads number of threads to create if using CPU parallel implementation
- * @param seconds number of seconds to run the simulation
- * @param output write nbody results to std::cout if true
- * 
- * @return true if success; false otherwise
- */
-bool get_flags(const int& argc, char* const argv[], std::string& test_file_name, 
-    bool& random_test, int& num_random_bodies, bool& sequential, bool& cuda, 
-    int& num_threads, int& seconds, bool& output);
-
-/**
- * Generate the necessary bodies for n-bodies.
- * 
- * @param test_file_name string specifying the file of the test 
- * @param random_test generate random bodies for test instead of using test file if true
- * @param num_random_bodies number of random bodies to generate if `random_test`
- * 
- * @return vector of the generated bodies
- */
-std::vector<Body> make_bodies(const std::string& test_file_name, const bool& random_test, 
-    const int& num_random_bodies);
-
-/**
- * Calculates the new acceleration of `bodies[body_num]` and reset collided boolean
- * for all bodies.
- * 
- * @param bodies vector of the bodies
- * @param body_num the index of the body in `bodies`
- */
-void update_acceleration_and_reset_collided(std::vector<Body>& bodies, int body_num);
-
-/**
- * Handles elastic collisions.
- * 
- * @param bodies vector of the bodies
- */
-void handle_collisions(std::vector<Body>& bodies);
-
-/**
- * Calculates the new velocity and location of `body`.
- * 
- * @param body body to be updated
- */
-void update_velocity_and_location(Body& body);
-
-/**
- * Print the current result of the simulation.
- * 
- * @param bodies vector of the bodies
- * @param second current second of simulation
- */
-void output_result(const std::vector<Body>& bodies, const int& second);
-
-/**
- * Sequential implementation.
- * 
- * @param bodies vector of the bodies
- * @param seconds number of seconds to run the simulation
- * @param output write nbody results to std::cout if true
- */
-void nbody_sequential(std::vector<Body>& bodies, const int& seconds, const bool& output);
-
-/**
- * Function for a single thread in the CPU parallel implementation.
- * 
- * @param options pointer to the ParallelThreadOption of this thread
- */ 
-void* nbody_parallel_thread(void* options);
-
-/**
- * CPU parallel implementation.
- * 
- * @param bodies vector of the bodies
- * @param seconds number of seconds to run the simulation
- * @param num_threads number of threads to create if using CPU parallel implementation
- * @param output write nbody results to std::cout if true
- */
-void nbody_parallel(std::vector<Body>& bodies, const int& seconds, const int& num_threads, 
-    const bool& output);
-
-/**
- * CUDA implementation.
- * 
- * @param bodies vector of the bodies
- * @param seconds number of seconds to run the simulation
- * @param output write nbody results to std::cout if true
- */
-void nbody_cuda(const std::vector<Body>& bodies, const int& seconds, const bool& output);
 
 #endif

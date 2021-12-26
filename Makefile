@@ -1,23 +1,24 @@
 n = 4000
-x = 120
+s = 120
 
-test:
-	make run
-	./nbody -r -n $(n) -s -x $(x)
-	./nbody -r -n $(n) -t 1 -x $(x)
-	./nbody -r -n $(n) -t 2 -x $(x)
-	./nbody -r -n $(n) -t 4 -x $(x)
-	./nbody -r -n $(n) -t 8 -x $(x)
-	./nbody -r -n $(n) -t 16 -x $(x)
-	./nbody -r -n $(n) -t 0 -x $(x)
-	./nbody -r -n $(n) -c -x $(x)
+tests:
+	make compile
+	./nbody -t 0 -r $(n) -i 0 -s $(s)
+	./nbody -t 0 -r $(n) -i 1 -n 1 -s $(s)
+	./nbody -t 0 -r $(n) -i 1 -n 2 -s $(s)
+	./nbody -t 0 -r $(n) -i 1 -n 4 -s $(s) 
+	./nbody -t 0 -r $(n) -i 1 -n 8 -s $(s)
+	./nbody -t 0 -r $(n) -i 1 -n 16 -s $(s)
+	./nbody -t 0 -r $(n) -i 1 -n 0 -s $(s)
+	./nbody -t 0 -r $(n) -i 2 -s $(s)
 
-run:
+compile:
+	nvcc -o main.o -c src/main.cc
 	nvcc -o nbody.o -c src/nbody.cc
 	nvcc -o nbody_cuda.o -c src/nbody.cu
-	nvcc -o nbody nbody.o nbody_cuda.o
+	nvcc -o nbody main.o nbody.o nbody_cuda.o
 
 commit:
 	git add -A
-	git commit -m "Updated Makefile"
+	git commit -m "Reorganized code in an OOP manner."
 	git push origin main

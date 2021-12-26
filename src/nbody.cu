@@ -7,7 +7,32 @@
 using namespace std;
 
 /**
- * Update the acceleration array and reset collided boolean for the
+ * @brief Print the current result of the simulation for the CUDA implementation.
+ * 
+ * @param second current second of simulation
+ * @param num_bodies the number of bodies in simulation
+ * @param positions array of double of the bodies' 3D positions
+ * @param velocities array of double of the bodies' 3D velocities
+ * @param acceleration array of double of the bodies' 3D acceleration
+ */
+void output_result_cuda(const int& second, const int num_bodies, 
+    const double* const positions, const double* const velocities, 
+    const double* const acceleration) {
+    cout << "Second: " << second << "\n";
+    for (int i = 0; i < num_bodies; i++) {
+        cout << "Body: " << i << "\n";
+        cout << "Position: (" << positions[i * 3] << ", " << positions[i * 3 + 1] 
+            << ", " << positions[i * 3 + 2] << ")\n";
+        cout << "Velocity: (" << velocities[i * 3] << ", " << velocities[i * 3 + 1] 
+            << ", " << velocities[i * 3 + 2] << ")\n";
+        cout << "Acceleration: (" << acceleration[i * 3] << ", " << 
+            acceleration[i * 3 + 1] << ", " << acceleration[i * 3 + 2] << ")\n";
+    }
+    cout << "\n";
+}
+
+/**
+ * @brief Update the acceleration array and reset collided boolean for the
  * CUDA implementation.
  * 
  * @param acceleration array of double of the bodies' 3D acceleration
@@ -33,7 +58,7 @@ __global__ void update_acceleration_and_reset_collided_cuda(double* const accele
                 const double d = sqrt(pow(positions[index * 3] - positions[i * 3], 2) 
                     + pow(positions[index * 3 + 1] - positions[i * 3 + 1], 2)
                     + pow(positions[index * 3 + 2] - positions[i * 3 + 2], 2));
-                const double g = (masses[i] * G) / pow(d, 3);
+                const double g = (masses[i] * NBodySimulator::G_) / pow(d, 3);
 
                 acceleration[index * 3] += g * (positions[i * 3] - positions[index * 3]);
                 acceleration[index * 3 + 1] += g * (positions[i * 3 + 1] - 
@@ -46,7 +71,8 @@ __global__ void update_acceleration_and_reset_collided_cuda(double* const accele
 }
 
 /**
- * Calculates the new velocity and location of the bodies for the CUDA implementation.
+ * @brief Calculates the new velocity and location of the bodies for the CUDA
+ * implementation.
  * 
  * @param positions array of double of the bodies' 3D positions
  * @param velocities array of double of the bodies' 3D velocities
@@ -54,8 +80,9 @@ __global__ void update_acceleration_and_reset_collided_cuda(double* const accele
  * @param collided array of boolean of whether a body collided this second
  * @param num_bodies the number of bodies in simulation
  */
-__global__ void update_velocity_and_location_cuda(double* const positions, double* const velocities, 
-    double* const acceleration, bool* const collided, const int num_bodies) {
+__global__ void update_velocity_and_location_cuda(double* const positions, 
+    double* const velocities, double* const acceleration, bool* const collided, 
+    const int num_bodies) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (index < num_bodies) {
@@ -70,9 +97,8 @@ __global__ void update_velocity_and_location_cuda(double* const positions, doubl
     }
 }
 
-
 /**
- * Handles elastic collisions for the CUDA implementation.
+ * @brief Handles elastic collisions for the CUDA implementation.
  * 
  * @param velocities array of double of the bodies' 3D velocities
  * @param positions array of double of the bodies' 3D positions
@@ -80,7 +106,6 @@ __global__ void update_velocity_and_location_cuda(double* const positions, doubl
  * @param radii array of double of bodies' radii
  * @param collided array of boolean of whether a body collided this second
  * @param num_bodies the number of bodies in simulation
- * 
  */
 void handle_collisions_cuda(double* const velocities, double* const positions, 
     double* const masses, double* const radii, bool* const collided, const int num_bodies) {
@@ -113,32 +138,7 @@ void handle_collisions_cuda(double* const velocities, double* const positions,
     }
 }
 
-/**
- * Print the current result of the simulation for the CUDA implementation.
- * 
- * @param second current second of simulation
- * @param num_bodies the number of bodies in simulation
- * @param positions array of double of the bodies' 3D positions
- * @param velocities array of double of the bodies' 3D velocities
- * @param acceleration array of double of the bodies' 3D acceleration
- */
-void output_result_cuda(const int& second, const int num_bodies, 
-    const double* const positions, const double* const velocities, 
-    const double* const acceleration) {
-    cout << "Second: " << second << "\n";
-    for (int i = 0; i < num_bodies; i++) {
-        cout << "Body: " << i << "\n";
-        cout << "Position: (" << positions[i * 3] << ", " << positions[i * 3 + 1] 
-            << ", " << positions[i * 3 + 2] << ")\n";
-        cout << "Velocity: (" << velocities[i * 3] << ", " << velocities[i * 3 + 1] 
-            << ", " << velocities[i * 3 + 2] << ")\n";
-        cout << "Acceleration: (" << acceleration[i * 3] << ", " << 
-            acceleration[i * 3 + 1] << ", " << acceleration[i * 3 + 2] << ")\n";
-    }
-    cout << "\n";
-}
-
-void nbody_cuda(const vector<Body>& bodies, const int& seconds, const bool& output) {
+void NBodySimulator::cuda(const vector<Body>& bodies, const int& seconds, const bool& output) {
     // Prepare data for GPU
     double *positions, *velocities, *acceleration, *masses, *radii;
     bool *collided;
@@ -166,24 +166,24 @@ void nbody_cuda(const vector<Body>& bodies, const int& seconds, const bool& outp
     }
     
     for (int s = 0; s < seconds; s++) {
-        if (output) {
+        if (output == 2 || output == 3) {
             output_result_cuda(s, bodies.size(), positions, velocities, acceleration);
         }
 
-        update_acceleration_and_reset_collided_cuda<<<(bodies.size() + THREADS_PER_BLOCK - 1) 
-            / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(acceleration, positions, masses, collided, 
+        update_acceleration_and_reset_collided_cuda<<<(bodies.size() + THREADS_PER_BLOCK_ - 1) 
+            / THREADS_PER_BLOCK_, THREADS_PER_BLOCK_>>>(acceleration, positions, masses, collided, 
             bodies.size());
         cudaDeviceSynchronize();
 
         handle_collisions_cuda(velocities, positions, masses, radii, collided, bodies.size());
 
-        update_velocity_and_location_cuda<<<(bodies.size() + THREADS_PER_BLOCK - 1) 
-            / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(positions, velocities, acceleration, collided, 
+        update_velocity_and_location_cuda<<<(bodies.size() + THREADS_PER_BLOCK_ - 1) 
+            / THREADS_PER_BLOCK_, THREADS_PER_BLOCK_>>>(positions, velocities, acceleration, collided, 
             bodies.size());
         cudaDeviceSynchronize();
     }
 
-    if (output) {
+    if (output == 2 || output == 3) {
         output_result_cuda(seconds, bodies.size(), positions, velocities, acceleration);
     }
 

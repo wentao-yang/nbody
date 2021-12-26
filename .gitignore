@@ -1,5 +1,6 @@
 nbody
 test_results/
+src/old_*
 
 # Prerequisites
 *.d
