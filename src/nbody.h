@@ -143,9 +143,10 @@ class NBodySimulator {
      * @brief CPU parallel implementation.
      * 
      * @param bodies vector of the bodies
-     * @param num_threads number of threads to create if using CPU parallel implementation
+     * @param num_threads number of threads to create if `implementation` = 1, 0 to match 
+     * number of bodies
      * @param seconds number of seconds to run the simulation
-     * @param output write nbody results to std::cout if true
+     * @param output no output: 0, performance: 1, results: 2, all: 3
      */
     void cpu_parallel(std::vector<Body> bodies, const int& num_threads, const int& seconds, 
         const int& output);
@@ -155,9 +156,9 @@ class NBodySimulator {
      * 
      * @param bodies vector of the bodies
      * @param seconds number of seconds to run the simulation
-     * @param output write nbody results to std::cout if true
+     * @param output no output: 0, performance: 1, results: 2, all: 3
      */
-    void cuda(const std::vector<Body>& bodies, const int& seconds, const bool& output);
+    void cuda(const std::vector<Body>& bodies, const int& seconds, const int& output);
 
     static constexpr int THREADS_PER_BLOCK_ = 512; // For CUDA
 

@@ -17,9 +17,11 @@ NBodySimulator::NBodySimulator(int test_type, int num_random_bodies, string test
         }
 
         for (int i = 0; i < num_random_bodies; i++) {
-            bodies_.push_back({{(double) (rand() % 100000) - 50000, (double) 
-            (rand() % 100000) - 50000, (double) (rand() % 100000) - 50000}, {0, 0, 0}, 
-            {0, 0, 0}, (double) (rand() % 1000) * 1E9, (double) (rand() % 100), false});
+            bodies_.push_back(
+                {{(double) (rand() % 5000) - 2500, (double) (rand() % 5000) - 2500, 
+                (double) (rand() % 5000) - 2500}, {0, 0, 0}, {0, 0, 0}, 
+                ((double) (rand() % 1000)) * 1E13, (double) (rand() % 100), false}
+            );
         }
     } else if (test_type == 1) { // Get bodies from input file
         if (test_file_name.empty()) {
@@ -62,6 +64,8 @@ bool NBodySimulator::simulate(int implementation, int num_threads, int seconds, 
     if (output < 0 || output > 3) {
         cerr << "[ERROR] `output` should be between [0, 3]. Actual: " << output << "\n";
         return false;
+    } else if (output == 2 || output == 3) {
+        cout << bodies_.size() << " " << seconds << "\n";
     }
 
     chrono::steady_clock::time_point start_time = chrono::steady_clock::now();
@@ -103,17 +107,10 @@ bool NBodySimulator::collided(const Body& a, const Body& b) {
 }
 
 void NBodySimulator::output_result(const vector<Body>& bodies, const int& second) {
-    cout << "Second: " << second << "\n";
     for (int i = 0; i < bodies.size(); i++) {
-        cout << "Body: " << i << "\n";
-        cout << "Position: (" << bodies[i].pos_.x_ << ", " << bodies[i].pos_.y_ << ", " 
-            << bodies[i].pos_.z_ << ")\n";
-        cout << "Velocity: (" << bodies[i].vel_.x_ << ", " << bodies[i].vel_.y_ << ", " 
-            << bodies[i].vel_.z_ << ")\n";
-        cout << "Acceleration: (" << bodies[i].acc_.x_ << ", " << bodies[i].acc_.y_ << 
-            ", " << bodies[i].acc_.z_ << ")\n";
+        cout << bodies[i].pos_.x_ << " " << bodies[i].pos_.y_ << " " << bodies[i].pos_.z_
+            << " " << bodies[i].radius_ << "\n";
     }
-    cout << "\n";
 }
 
 void NBodySimulator::update_acceleration_and_reset_collided(vector<Body>& bodies, 
