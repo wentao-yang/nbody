@@ -2,7 +2,7 @@
 
 ## Background and Goals
 
-The *n-body* problem is important in physics in understanding how objects interact with each other via its laws, including the conservation of energy and momentum and Newton's Law of Universal Gravitation. This project uses *C++* and *CUDA* to tackle this problem and uses *Python* and *Matplotlib* to visualize the results.
+The [*n-body* problem](https://en.wikipedia.org/wiki/N-body_problem "n-body problem") is important in physics in understanding how objects interact with each other via its laws, including the conservation of energy and momentum and Newton's Law of Universal Gravitation. This project uses *C++* and *CUDA* to tackle this problem and uses *Python* and *Matplotlib* to visualize the results.
 
 The code is expected to either take in a file that is formatted appropriately to generate the initial state of the bodies or generate a chosen amount of bodies with random parameters. Then, the code will perform the simulation on the bodies, with a possible 3 ways: sequentially, parallel using CPU, and using *CUDA*. The sequential method, as the name suggests, does not utilize any parallel implementations and serves as a baseline, and the parallel implementation using the CPU allows for a manual number of threads. The final implementation is expected to use *CUDA*. The simulation has a set number of seconds to be simulated and will be timed so that the efficiency of each method can be compared. 
 
@@ -16,11 +16,11 @@ The juice of the code for the simulation is encapsulated in the `NBodySimulator`
 
 The three implementations follow a similar order for simulating every body every second:
 
-1. Calculate the total acceleration felt by the body from every other body in the system by iterating over every other body and calculating the gravitational acceleration using the formula from Newton's Law of Universal Gravitation between the two.
+1. Calculate the total acceleration felt by the body from every other body in the system by iterating over every other body and calculating the gravitational acceleration using [the formula from Newton's Law of Universal Gravitation](https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation "Newton's Law of Universal Gravitation") between the two.
 2. Use the acceleration value to modify the velocity, which is a simple addition as the time step is 1 second.
 3. Use the new velocity to modify the position, which is also a simple addition as the time step is 1 second.
 
-There, however, exists a case where two bodies touch each other/collide. In this special case, the code will ignore the acceleration value generated for both bodies and calculate their new velocity as if an elastic collision occurred between the two by derivation from the formulas from the conservation of momentum and energy. Acceleration is ignored because the gravitational force between the two may be too strong due to them being close together, holding the two bodies together, which is not the elastic collisions where the two bodies would "bounce off" each other desired.
+There, however, exists a case where two bodies touch each other/collide. In this special case, the code will ignore the acceleration value generated for both bodies and calculate their new velocity as if an elastic collision occurred between the two by [derivation from the formulas from the conservation of momentum and energy](http://hyperphysics.phy-astr.gsu.edu/hbase/elacol2.html "Elastic Collision Formula"). Acceleration is ignored because the gravitational force between the two may be too strong due to them being close together, holding the two bodies together, which is not the elastic collisions where the two bodies would "bounce off" each other desired.
 
 ### Sequential Method
 
