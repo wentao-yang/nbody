@@ -40,7 +40,7 @@ The visualization is done using *Python* and *Matplotlib*. The code takes in the
 
 ### File Structure
 
-The source code is in the folder $src$, and two small tests and their expected results are in $tests/$ and $expected\_test\_results/$ respectively. The two tests are for simple demonstrations rather than intensive testing. A Makefile exists to compile and run the code.
+The source code is in the folder `src/`, and two small tests and their expected results are in `tests/` and `expected_test_results/` respectively. The two tests are for simple demonstrations rather than intensive testing. A Makefile exists to compile and run the code.
 
 ## Evaluation and Results
 
